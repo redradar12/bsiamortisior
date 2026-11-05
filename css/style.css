@@ -311,6 +311,9 @@ body.menu-open .mobile-menu{ clip-path:inset(0 0 0 0); visibility:visible; }
 
 /* Puzzle animasyonu devre dışı (JS yok / hareket azaltma) */
 .no-js .piece{ clip-path:none !important; transform:none !important; }
+.no-js .hero__inner > *{ opacity:1 !important; transform:none !important; }
+.no-js .hero__scroll{ opacity:1; }
+.no-js .preloader{ display:none !important; }
 @media (prefers-reduced-motion: reduce){
   .piece{ clip-path:none !important; }
   .hero__inner > *{ opacity:1 !important; transform:none !important; }

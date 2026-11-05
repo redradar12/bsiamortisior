@@ -9,7 +9,8 @@
 
   var doc = document;
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  doc.documentElement.classList.remove('no-js');
+  /* .no-js sınıfı hero görünür olduğunda kaldırılır (aşağıda heroIn).
+     Böylece animasyon herhangi bir nedenle takılırsa sayfa kilitli/boş kalmaz. */
 
   /* ===================================================================
      1. ÖN YÜKLEYİCİ
@@ -416,16 +417,25 @@
     var scrollHint = doc.querySelector('.hero__scroll');
     var header = doc.querySelector('.header');
 
+    var revealed = false;
     function heroIn() {
+      if (revealed) return;          // yalnızca bir kez
+      revealed = true;
+      doc.documentElement.classList.remove('no-js');
       if (hero) hero.classList.add('is-in');
       if (scrollHint) scrollHint.classList.add('is-in');
       if (header) header.classList.add('is-ready');
       doc.body.classList.remove('is-locked');
+      var pz = doc.querySelector('.puzzle');
+      if (pz) pz.classList.add('is-assembled');
     }
 
     if (!reduceMotion) doc.body.classList.add('is-locked');
 
-    if (doc.querySelector('.puzzle')) {
+    /* Güvenlik ağı: puzzle animasyonu takılsa bile sayfa asla kilitli kalmasın */
+    setTimeout(heroIn, 4000);
+
+    if (doc.querySelector('.puzzle') && typeof Element.prototype.animate === 'function') {
       Puzzle.init(function () {
         setTimeout(heroIn, 100);
       });
@@ -434,8 +444,21 @@
     }
   }
 
-  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', function () {
-    preload(boot);
-  });
-  else preload(boot);
+  /* Ön yükleyici yalnızca oturumdaki ilk sayfada gösterilir; her tıklamada
+     tam ekran karartma (giriş-çıkış efekti) oluşmasını engeller. */
+  var seen = false;
+  try { seen = sessionStorage.getItem('bsi-seen') === '1'; } catch (e) {}
+
+  if (seen) {
+    var pl = doc.querySelector('.preloader');
+    if (pl && pl.parentNode) pl.parentNode.removeChild(pl);
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
+    else boot();
+  } else {
+    try { sessionStorage.setItem('bsi-seen', '1'); } catch (e) {}
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', function () {
+      preload(boot);
+    });
+    else preload(boot);
+  }
 })();
