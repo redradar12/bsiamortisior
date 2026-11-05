@@ -29,6 +29,15 @@ var DENY_COUNTRIES = [
   // 'RU', 'CN'
 ];
 
+// Taranan/scanner yolları — WordPress ve sunucu açığı arayan botlar.
+// 404 sayfası yerine ucuz bir 403 döner; hem istek hem bant genişliği düşer.
+var SCANNER_PATHS = [
+  '/xmlrpc.php', '/wp-login.php', '/wp-admin', '/wp-content', '/wp-includes',
+  '/wp-json', '/wp-config', '/.env', '/.git', '/phpmyadmin', '/admin.php',
+  '/shell.php', '/config.php', '/backup', '/.aws', '/vendor/phpunit',
+  '/cgi-bin', '/actuator', '/server-status', '/.well-known/security.txt'
+];
+
 // Hotlink korumasının geçerli sayacağı alan adları
 var ALLOWED_HOSTS = ['bsiamortisor.com', 'vercel.app'];
 
@@ -36,6 +45,15 @@ export default function middleware(request) {
   try {
     var url = new URL(request.url);
     var host = url.hostname;
+    var path = url.pathname.toLowerCase();
+
+    // ---- 0) Scanner yolları ve doğrudan /404.html istekleri ----
+    if (path === '/404.html') return new Response('Gone', { status: 410 });
+    for (var s = 0; s < SCANNER_PATHS.length; s++) {
+      if (path.indexOf(SCANNER_PATHS[s]) === 0) {
+        return new Response('Forbidden', { status: 403 });
+      }
+    }
 
     // ---- 1) Hotlink koruması (yalnızca /assets/ altındaki dosyalar) ----
     if (url.pathname.indexOf('/assets/') === 0) {
